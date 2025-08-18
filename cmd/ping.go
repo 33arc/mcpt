@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -18,6 +19,8 @@ type JSONRPCRequest struct {
 	Params  interface{} `json:"params"`
 }
 
+var host string
+
 var pingCmd = &cobra.Command{
 	Use:   "ping",
 	Short: "Ping the MCP server over HTTP",
@@ -26,7 +29,7 @@ var pingCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		url := "http://localhost:8080/mcp"
+		url := host
 
 		// --- First request: initialize ---
 		reqBody := JSONRPCRequest{
@@ -98,9 +101,63 @@ var pingCmd = &cobra.Command{
 		defer notifResp.Body.Close()
 
 		log.Println("Sent notifications/initialized, response status:", notifResp.Status)
+
+		log.Println("Ready for the operation phase...")
+		// --- Third request: ping
+
+		ping := map[string]interface{}{
+			"jsonrpc": "2.0",
+			"id":      "123",
+			"method":  "ping",
+		}
+
+		pingBytes, err := json.Marshal(ping)
+		if err != nil {
+			log.Fatal("Failed to marshal ping:", err)
+		}
+
+		pingReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(pingBytes))
+		if err != nil {
+			log.Fatal("Failed to create notification request:", err)
+		}
+		pingReq.Header.Set("Content-Type", "application/json")
+		pingReq.Header.Set("Accept", "application/json")
+		pingReq.Header.Set("Mcp-Session-Id", sessionID)
+
+		pingResp, err := client.Do(pingReq)
+		if err != nil {
+			log.Fatal("Ping request failed:", err)
+		}
+		defer pingResp.Body.Close()
+
+		respBody, err := io.ReadAll(pingResp.Body)
+		if err != nil {
+			log.Fatal("Failed to read response body:", err)
+		}
+
+		var respJSON map[string]interface{}
+		if err := json.Unmarshal(respBody, &respJSON); err != nil {
+			log.Fatal("Failed to unmarshal response:", err)
+		}
+		expectedID := "123"
+
+		if respJSON["jsonrpc"] != "2.0" {
+			log.Fatal("Unexpected jsonrpc value")
+		}
+
+		if respJSON["id"] != expectedID {
+			log.Fatal("Unexpected id value")
+		}
+
+		if result, ok := respJSON["result"].(map[string]interface{}); !ok || len(result) != 0 {
+			log.Fatal("Unexpected result value")
+		}
+
+		log.Println("Ping OK ✅")
 	},
 }
 
 func init() {
+	pingCmd.Flags().StringVar(&host, "host", "http://localhost:8080/mcp", "MCP server URL")
 	rootCmd.AddCommand(pingCmd)
 }
