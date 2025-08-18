@@ -28,6 +28,7 @@ var pingCmd = &cobra.Command{
 
 		url := "http://localhost:8080/mcp"
 
+		// --- First request: initialize ---
 		reqBody := JSONRPCRequest{
 			JSONRPC: "2.0",
 			ID:      1,
@@ -69,8 +70,34 @@ var pingCmd = &cobra.Command{
 		if sessionID == "" {
 			log.Fatal("MCP-Session-ID not found in response headers")
 		}
-
 		log.Println("MCP-Session-ID:", sessionID)
+
+		// --- Second request: notifications/initialized ---
+		notification := map[string]interface{}{
+			"jsonrpc": "2.0",
+			"method":  "notifications/initialized",
+		}
+
+		notificationBytes, err := json.Marshal(notification)
+		if err != nil {
+			log.Fatal("Failed to marshal notification:", err)
+		}
+
+		notifReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(notificationBytes))
+		if err != nil {
+			log.Fatal("Failed to create notification request:", err)
+		}
+		notifReq.Header.Set("Content-Type", "application/json")
+		notifReq.Header.Set("Accept", "application/json")
+		notifReq.Header.Set("Mcp-Session-Id", sessionID)
+
+		notifResp, err := client.Do(notifReq)
+		if err != nil {
+			log.Fatal("Notification request failed:", err)
+		}
+		defer notifResp.Body.Close()
+
+		log.Println("Sent notifications/initialized, response status:", notifResp.Status)
 	},
 }
 
