@@ -1,0 +1,1 @@
+go run main.go ping --host http://localhost:8080/mcp
