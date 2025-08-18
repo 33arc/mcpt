@@ -43,7 +43,7 @@ to quickly create a Cobra application.`,
 					},
 				},
 				"clientInfo": map[string]interface{}{
-					"name":    "hurl-client",
+					"name":    "go-client",
 					"version": "1.0.0",
 				},
 				"protocolVersion": "2.0",
@@ -127,12 +127,29 @@ to quickly create a Cobra application.`,
 		defer pingResp.Body.Close()
 
 		var respJSON map[string]interface{}
-		if err := json.NewDecoder(resp.Body).Decode(&respJSON); err != nil {
+		if err := json.NewDecoder(pingResp.Body).Decode(&respJSON); err != nil {
 			log.Fatal("Failed to decode JSON:", err)
 		}
 
-		pretty, _ := json.MarshalIndent(respJSON, "", "  ")
-		fmt.Println(string(pretty))
+		// drill into result
+		result, ok := respJSON["result"].(map[string]interface{})
+		if !ok {
+			log.Fatal("result not found or wrong type")
+		}
+
+		// drill into tools
+		tools, ok := result["tools"].([]interface{})
+		if !ok {
+			log.Fatal("tools not found or wrong type")
+		}
+
+		// marshal just the tools array back to JSON
+		toolsJSON, err := json.MarshalIndent(tools, "", "  ")
+		if err != nil {
+			log.Fatal("Failed to marshal tools:", err)
+		}
+
+		fmt.Println(string(toolsJSON))
 
 	},
 }
