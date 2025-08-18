@@ -1,6 +1,5 @@
 /*
 Copyright © 2025 33arc
-
 */
 package cmd
 
@@ -9,8 +8,6 @@ import (
 
 	"github.com/spf13/cobra"
 )
-
-
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -37,6 +34,7 @@ func Execute() {
 }
 
 func init() {
+	rootCmd.Flags().StringVar(&host, "host", "http://localhost:8080/mcp", "MCP server URL")
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
@@ -47,5 +45,3 @@ func init() {
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
-
-

@@ -1,6 +1,5 @@
 /*
 Copyright © 2025 33arc
-
 */
 package main
 
