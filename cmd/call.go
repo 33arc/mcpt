@@ -28,7 +28,7 @@ to quickly create a Cobra application.`,
 			log.Fatal("Missing --tool JSON string")
 		}
 
-		client := mcp.NewClient(host, false)
+		client := mcp.NewClient(host, false, protocolVersion)
 		client.Call(tool, arguments)
 	},
 }

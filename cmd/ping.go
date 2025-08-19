@@ -11,7 +11,7 @@ var pingCmd = &cobra.Command{
 	Long:  "Send a ping request to the MCP server over HTTP to verify connectivity.",
 
 	Run: func(cmd *cobra.Command, args []string) {
-		client := mcp.NewClient(host, false)
+		client := mcp.NewClient(host, false, protocolVersion)
 		client.Ping()
 	},
 }

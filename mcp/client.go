@@ -13,12 +13,13 @@ import (
 )
 
 type Client struct {
-	Host       string
-	SSE        bool
-	SID        string
-	CTX        context.Context
-	Cancel     context.CancelFunc
-	HTTPClient *http.Client
+	Host            string
+	SSE             bool
+	SID             string
+	CTX             context.Context
+	Cancel          context.CancelFunc
+	HTTPClient      *http.Client
+	ProtocolVersion string
 }
 
 type JSONRPCRequest struct {
@@ -28,9 +29,13 @@ type JSONRPCRequest struct {
 	Params  interface{} `json:"params"`
 }
 
-func NewClient(host string, isSSE bool) *Client {
+func NewClient(host string, isSSE bool, protocolVersion string) *Client {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	httpClient := &http.Client{}
+
+	if protocolVersion == "" {
+		protocolVersion = "2025-06-18"
+	}
 
 	return &Client{
 		Host:       host,
@@ -39,6 +44,7 @@ func NewClient(host string, isSSE bool) *Client {
 		CTX:        ctx,
 		Cancel:     cancel,
 		HTTPClient: httpClient,
+		ProtocolVersion: protocolVersion
 	}
 }
 
@@ -261,7 +267,7 @@ func (c *Client) sendInitializeRequest() {
 				"name":    "go-client",
 				"version": "1.0.0",
 			},
-			"protocolVersion": "2.0",
+			"protocolVersion":c.ProtocolVersion,
 		},
 	}
 
