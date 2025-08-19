@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -167,5 +168,63 @@ func (c *Client) ping() {
 	}
 
 	log.Println("Ping OK ✅")
+}
 
+func (c *Client) ListFeature(feature string) {
+	c.sendInitializeRequest()
+	c.sendInitializedNotification()
+	c.doOperationList(feature)
+}
+
+func (c *Client) doOperationList(feature string) {
+	method := feature + "/list"
+	ping := map[string]interface{}{
+		"jsonrpc": "2.0",
+		"id":      "123",
+		"method":  method,
+	}
+
+	pingBytes, err := json.Marshal(ping)
+	if err != nil {
+		log.Fatal("Failed to marshal ping:", err)
+	}
+
+	pingReq, err := http.NewRequestWithContext(c.CTX, "POST", c.Host, bytes.NewBuffer(pingBytes))
+	if err != nil {
+		log.Fatal("Failed to create notification request:", err)
+	}
+	pingReq.Header.Set("Content-Type", "application/json")
+	pingReq.Header.Set("Accept", "application/json")
+	pingReq.Header.Set("Mcp-Session-Id", c.SID)
+
+	pingResp, err := c.HTTPClient.Do(pingReq)
+	if err != nil {
+		log.Fatal("Ping request failed:", err)
+	}
+	defer pingResp.Body.Close()
+
+	var respJSON map[string]interface{}
+	if err := json.NewDecoder(pingResp.Body).Decode(&respJSON); err != nil {
+		log.Fatal("Failed to decode JSON:", err)
+	}
+
+	// drill into result
+	result, ok := respJSON["result"].(map[string]interface{})
+	if !ok {
+		log.Fatal("result not found or wrong type")
+	}
+
+	// drill into tools
+	tools, ok := result[feature].([]interface{})
+	if !ok {
+		log.Fatal("tools not found or wrong type")
+	}
+
+	// marshal just the tools array back to JSON
+	toolsJSON, err := json.MarshalIndent(tools, "", "  ")
+	if err != nil {
+		log.Fatal("Failed to marshal tools:", err)
+	}
+
+	fmt.Println(string(toolsJSON))
 }
