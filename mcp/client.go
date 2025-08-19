@@ -42,6 +42,19 @@ func NewClient(host string, isSSE bool) *Client {
 	}
 }
 
+func (c *Client) Call(tool, arguments string) {
+	c.sendInitializeRequest()
+	c.sendInitializedNotification()
+	result := c.doOperation(tool, arguments)
+
+	resultJSON, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		log.Fatal("Failed to marshal feature:", err)
+	}
+
+	fmt.Println(string(resultJSON))
+}
+
 func (c *Client) ListFeature(feature, output string) {
 	c.sendInitializeRequest()
 	c.sendInitializedNotification()
@@ -53,6 +66,49 @@ func (c *Client) Ping() {
 	c.sendInitializeRequest()
 	c.sendInitializedNotification()
 	c.ping()
+}
+
+func (c *Client) doOperation(tool, arguments string) map[string]interface{} {
+	var args interface{}
+	if err := json.Unmarshal([]byte(arguments), &args); err != nil {
+		log.Fatal("Failed to parse arguments JSON:", err)
+	}
+
+	ping := map[string]interface{}{
+		"jsonrpc": "2.0",
+		"id":      "123",
+		"method":  "tools/call",
+		"params": map[string]interface{}{
+			"name":      tool,
+			"arguments": args,
+		},
+	}
+
+	pingBytes, err := json.Marshal(ping)
+	if err != nil {
+		log.Fatal("Failed to marshal ping:", err)
+	}
+
+	pingReq, err := http.NewRequestWithContext(c.CTX, "POST", c.Host, bytes.NewBuffer(pingBytes))
+	if err != nil {
+		log.Fatal("Failed to create notification request:", err)
+	}
+	pingReq.Header.Set("Content-Type", "application/json")
+	pingReq.Header.Set("Accept", "application/json")
+	pingReq.Header.Set("Mcp-Session-Id", c.SID)
+
+	pingResp, err := c.HTTPClient.Do(pingReq)
+	if err != nil {
+		log.Fatal("Ping request failed:", err)
+	}
+	defer pingResp.Body.Close()
+
+	var respJSON map[string]interface{}
+	if err := json.NewDecoder(pingResp.Body).Decode(&respJSON); err != nil {
+		log.Fatal("Failed to decode JSON:", err)
+	}
+
+	return respJSON
 }
 
 func (c *Client) display(features []interface{}, output string) {
