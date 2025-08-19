@@ -19,8 +19,6 @@ type JSONRPCRequest struct {
 	Params  interface{} `json:"params"`
 }
 
-var host string
-
 var pingCmd = &cobra.Command{
 	Use:   "ping",
 	Short: "Ping the MCP server over HTTP",

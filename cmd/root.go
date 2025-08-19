@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var host string
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "mcpt",
@@ -34,7 +36,8 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().StringVar(&host, "host", "http://localhost:8080/mcp", "MCP server URL")
+	rootCmd.PersistentFlags().StringVar(&host, "host", "http://localhost:8080/mcp", "MCP server URL")
+	rootCmd.MarkPersistentFlagRequired("host")
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
