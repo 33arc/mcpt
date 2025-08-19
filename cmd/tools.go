@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/33arc/mcpt/mcp"
 	"github.com/spf13/cobra"
 )
 
@@ -31,7 +32,7 @@ to quickly create a Cobra application.`,
 		url := host
 
 		// --- First request: initialize ---
-		reqBody := JSONRPCRequest{
+		reqBody := mcp.JSONRPCRequest{
 			JSONRPC: "2.0",
 			ID:      1,
 			Method:  "initialize",
