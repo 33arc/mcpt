@@ -1,5 +1,14 @@
-go run ./main.go ping --host http://localhost:8080/mcp
+go build -o ./mcpt
 
-go run ./main.go list tools --host "http://localhost:8080/mcp"
-go run ./main.go list prompts --host "http://localhost:8080/mcp"
-go run ./main.go list resources --host "http://localhost:8080/mcp"
+./mcpt ping --host http://localhost:8080/mcp
+
+./mcpt list tools --host "http://localhost:8080/mcp"
+./mcpt list prompts --host "http://localhost:8080/mcp"
+./mcpt list resources --host "http://localhost:8080/mcp"
+
+# by default it uses json output
+./mcpt list tools --host "http://localhost:8080/mcp" --output "call"
+./mcpt list tools --host "http://localhost:8080/mcp" --output "json"
+
+./mcpt call --host 'http://localhost:8080/mcp' --tool 'format_text' --arguments '{"text":"somevalue"}'
+
