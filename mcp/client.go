@@ -41,6 +41,12 @@ func NewClient(host string, isSSE bool) *Client {
 	}
 }
 
+func (c *Client) ListFeature(feature string) {
+	c.sendInitializeRequest()
+	c.sendInitializedNotification()
+	c.doOperationList(feature)
+}
+
 func (c *Client) Ping() {
 	c.sendInitializeRequest()
 	c.sendInitializedNotification()
@@ -170,12 +176,6 @@ func (c *Client) ping() {
 	log.Println("Ping OK ✅")
 }
 
-func (c *Client) ListFeature(feature string) {
-	c.sendInitializeRequest()
-	c.sendInitializedNotification()
-	c.doOperationList(feature)
-}
-
 func (c *Client) doOperationList(feature string) {
 	method := feature + "/list"
 	ping := map[string]interface{}{
@@ -214,17 +214,17 @@ func (c *Client) doOperationList(feature string) {
 		log.Fatal("result not found or wrong type")
 	}
 
-	// drill into tools
-	tools, ok := result[feature].([]interface{})
+	// drill into feature
+	feature, ok := result[feature].([]interface{})
 	if !ok {
 		log.Fatal("tools not found or wrong type")
 	}
 
-	// marshal just the tools array back to JSON
-	toolsJSON, err := json.MarshalIndent(tools, "", "  ")
+	// marshal just the feature array back to JSON
+	featureJSON, err := json.MarshalIndent(feature, "", "  ")
 	if err != nil {
 		log.Fatal("Failed to marshal tools:", err)
 	}
 
-	fmt.Println(string(toolsJSON))
+	fmt.Println(string(featureJSON))
 }
