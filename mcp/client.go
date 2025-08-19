@@ -215,13 +215,13 @@ func (c *Client) doOperationList(feature string) {
 	}
 
 	// drill into feature
-	feature, ok := result[feature].([]interface{})
+	features, ok := result[feature].([]interface{})
 	if !ok {
 		log.Fatal("tools not found or wrong type")
 	}
 
 	// marshal just the feature array back to JSON
-	featureJSON, err := json.MarshalIndent(feature, "", "  ")
+	featureJSON, err := json.MarshalIndent(features, "", "  ")
 	if err != nil {
 		log.Fatal("Failed to marshal tools:", err)
 	}
