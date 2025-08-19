@@ -10,6 +10,7 @@ import (
 )
 
 var host string
+var output string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -36,6 +37,7 @@ func Execute() {
 }
 
 func init() {
+	rootCmd.PersistentFlags().StringVar(&output, "output", "json", "Which output to use")
 	rootCmd.PersistentFlags().StringVar(&host, "host", "http://localhost:8080/mcp", "MCP server URL")
 	rootCmd.MarkPersistentFlagRequired("host")
 	// Here you will define your flags and configuration settings.

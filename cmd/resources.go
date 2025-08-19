@@ -19,7 +19,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := mcp.NewClient(host, false)
-		client.ListFeature("resources")
+		client.ListFeature("resources", output)
 	},
 }
 
