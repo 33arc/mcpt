@@ -1,4 +1,3 @@
-go run main.go ping --host http://localhost:8080/mcp
+go run ./main.go ping --host http://localhost:8080/mcp
 
-go run ./main.go tools list --host "http://localhost:8080/mcp" | jq
-
+go run ./main.go list tools --host "http://localhost:8080/mcp"
