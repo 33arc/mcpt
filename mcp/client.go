@@ -38,13 +38,13 @@ func NewClient(host string, isSSE bool, protocolVersion string) *Client {
 	}
 
 	return &Client{
-		Host:       host,
-		SSE:        isSSE,
-		SID:        "",
-		CTX:        ctx,
-		Cancel:     cancel,
-		HTTPClient: httpClient,
-		ProtocolVersion: protocolVersion
+		Host:            host,
+		SSE:             isSSE,
+		SID:             "",
+		CTX:             ctx,
+		Cancel:          cancel,
+		HTTPClient:      httpClient,
+		ProtocolVersion: protocolVersion,
 	}
 }
 
@@ -101,6 +101,7 @@ func (c *Client) doOperation(tool, arguments string) map[string]interface{} {
 	}
 	pingReq.Header.Set("Content-Type", "application/json")
 	pingReq.Header.Set("Accept", "application/json")
+	pingReq.Header.Set("Accept", "text/event-stream")
 	pingReq.Header.Set("Mcp-Session-Id", c.SID)
 
 	pingResp, err := c.HTTPClient.Do(pingReq)
@@ -267,7 +268,7 @@ func (c *Client) sendInitializeRequest() {
 				"name":    "go-client",
 				"version": "1.0.0",
 			},
-			"protocolVersion":c.ProtocolVersion,
+			"protocolVersion": c.ProtocolVersion,
 		},
 	}
 
@@ -282,6 +283,7 @@ func (c *Client) sendInitializeRequest() {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
@@ -314,6 +316,7 @@ func (c *Client) sendInitializedNotification() {
 	}
 	notifReq.Header.Set("Content-Type", "application/json")
 	notifReq.Header.Set("Accept", "application/json")
+	notifReq.Header.Set("Accept", "text/event-stream")
 	notifReq.Header.Set("Mcp-Session-Id", c.SID)
 
 	notifResp, err := c.HTTPClient.Do(notifReq)
@@ -341,6 +344,7 @@ func (c *Client) ping() {
 	}
 	pingReq.Header.Set("Content-Type", "application/json")
 	pingReq.Header.Set("Accept", "application/json")
+	pingReq.Header.Set("Accept", "text/event-stream")
 	pingReq.Header.Set("Mcp-Session-Id", c.SID)
 
 	pingResp, err := c.HTTPClient.Do(pingReq)
@@ -394,6 +398,7 @@ func (c *Client) doOperationList(feature string) []interface{} {
 	}
 	pingReq.Header.Set("Content-Type", "application/json")
 	pingReq.Header.Set("Accept", "application/json")
+	pingReq.Header.Set("Accept", "text/event-stream")
 	pingReq.Header.Set("Mcp-Session-Id", c.SID)
 
 	pingResp, err := c.HTTPClient.Do(pingReq)
