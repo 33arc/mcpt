@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -29,7 +30,7 @@ type JSONRPCRequest struct {
 	Params  interface{} `json:"params"`
 }
 
-func NewClient(host string, isSSE bool, protocolVersion string) *Client {
+func NewClient(host string, sseEnabled bool, protocolVersion string) *Client {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	httpClient := &http.Client{}
 
@@ -39,7 +40,7 @@ func NewClient(host string, isSSE bool, protocolVersion string) *Client {
 
 	return &Client{
 		Host:            host,
-		SSE:             isSSE,
+		SSE:             sseEnabled,
 		SID:             "",
 		CTX:             ctx,
 		Cancel:          cancel,
@@ -51,14 +52,7 @@ func NewClient(host string, isSSE bool, protocolVersion string) *Client {
 func (c *Client) Call(tool, arguments string) {
 	c.sendInitializeRequest()
 	c.sendInitializedNotification()
-	result := c.doOperation(tool, arguments)
-
-	resultJSON, err := json.MarshalIndent(result, "", "  ")
-	if err != nil {
-		log.Fatal("Failed to marshal feature:", err)
-	}
-
-	fmt.Println(string(resultJSON))
+	c.doOperation(tool, arguments)
 }
 
 func (c *Client) ListFeature(feature, output string) {
@@ -74,7 +68,7 @@ func (c *Client) Ping() {
 	c.ping()
 }
 
-func (c *Client) doOperation(tool, arguments string) map[string]interface{} {
+func (c *Client) doOperation(tool, arguments string) {
 	var args interface{}
 	if err := json.Unmarshal([]byte(arguments), &args); err != nil {
 		log.Fatal("Failed to parse arguments JSON:", err)
@@ -95,13 +89,21 @@ func (c *Client) doOperation(tool, arguments string) map[string]interface{} {
 		log.Fatal("Failed to marshal ping:", err)
 	}
 
-	pingReq, err := http.NewRequestWithContext(c.CTX, "POST", c.Host, bytes.NewBuffer(pingBytes))
+	requestMethod := "POST"
+	if c.SSE == true {
+		requestMethod = "GET"
+	}
+
+	pingReq, err := http.NewRequestWithContext(c.CTX, requestMethod, c.Host, bytes.NewBuffer(pingBytes))
 	if err != nil {
 		log.Fatal("Failed to create notification request:", err)
 	}
 	pingReq.Header.Set("Content-Type", "application/json")
-	pingReq.Header.Set("Accept", "application/json")
-	pingReq.Header.Set("Accept", "text/event-stream")
+	if c.SSE == true {
+		pingReq.Header.Set("Accept", "text/event-stream")
+	} else {
+		pingReq.Header.Set("Accept", "application/json")
+	}
 	pingReq.Header.Set("Mcp-Session-Id", c.SID)
 
 	pingResp, err := c.HTTPClient.Do(pingReq)
@@ -110,14 +112,41 @@ func (c *Client) doOperation(tool, arguments string) map[string]interface{} {
 	}
 	defer pingResp.Body.Close()
 
-	var respJSON map[string]interface{}
-	if err := json.NewDecoder(pingResp.Body).Decode(&respJSON); err != nil {
-		log.Fatal("Failed to decode JSON:", err)
+	contentType := pingResp.Header.Get("Content-Type")
+
+	switch {
+	case contentType == "application/json":
+		var respJSON map[string]interface{}
+		if err := json.NewDecoder(pingResp.Body).Decode(&respJSON); err != nil {
+			log.Fatal("Failed to decode JSON:", err)
+		}
+		resultJSON, err := json.MarshalIndent(respJSON, "", "  ")
+		if err != nil {
+			log.Fatal("Failed to marshal feature:", err)
+		}
+
+		fmt.Println(string(resultJSON))
+
+	case contentType == "text/event-stream":
+		fmt.Println("SSE Stream detected (optional output):")
+		scanner := bufio.NewScanner(pingResp.Body)
+		go func() {
+			for scanner.Scan() {
+				line := scanner.Text()
+				fmt.Println("SSE:", line)
+			}
+			if err := scanner.Err(); err != nil {
+				fmt.Println("Error reading SSE stream:", err)
+			}
+		}()
+
+	case pingResp.StatusCode == http.StatusMethodNotAllowed:
+		log.Println("Server returned 405 Method Not Allowed: SSE not offered at this endpoint")
+
+	default:
+		log.Printf("Unexpected response: %s, status: %d\n", contentType, pingResp.StatusCode)
 	}
-
-	return respJSON
 }
-
 func (c *Client) display(features []interface{}, output string) {
 	if output == "json" {
 		// marshal just the feature array back to JSON
