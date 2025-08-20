@@ -11,4 +11,5 @@ go build -o ./mcpt
 ./mcpt list tools --host "http://localhost:8080/mcp" --output "json"
 
 ./mcpt call --host 'http://localhost:8080/mcp' --tool 'format_text' --arguments '{"text":"somevalue"}'
+./mcpt call --sse --host 'http://localhost:8080/mcp' --tool 'format_text' --arguments '{"text":"somevalue"}'
 
