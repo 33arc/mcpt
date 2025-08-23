@@ -170,7 +170,8 @@ func (c *Client) display(features []interface{}, output string) {
 
 			required, ok := inputSchema["required"].([]interface{})
 			if !ok {
-				log.Fatal("required not found")
+				required = []interface{}{}
+				// log.Println("required not found!")
 			}
 
 			properties, ok := inputSchema["properties"].(map[string]interface{})
@@ -206,7 +207,10 @@ func (c *Client) display(features []interface{}, output string) {
 				}
 			}
 
-			argument = argument[:len(argument)-1] // remove the last character
+			// Only remove the last comma if argument is non-empty
+			if len(argument) > 0 {
+				argument = argument[:len(argument)-1]
+			}
 			fmt.Printf("mcpt call --host '%s' --tool '%s' --arguments '{%s}'\n", c.Host, toolName, argument)
 			traverseProperties(properties, "", requiredSet)
 			fmt.Printf("\n")
