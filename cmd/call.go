@@ -35,7 +35,7 @@ to quickly create a Cobra application.`,
 
 func init() {
 	callCmd.Flags().StringVar(&tool, "tool", "", "Tool name")
-	callCmd.Flags().StringVar(&arguments, "arguments", "", "Json file containing arguments")
+	callCmd.Flags().StringVar(&arguments, "arguments", "{}", "Json file containing arguments")
 	rootCmd.AddCommand(callCmd)
 
 	// Here you will define your flags and configuration settings.
